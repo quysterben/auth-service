@@ -52,11 +52,13 @@ const AuthModel: ModelDefined<IAuthDocument, AuthUserCreationAttributes> & AuthM
     },
     browserName: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true,
+      defaultValue: 'unknown'
     },
     deviceType: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true,
+      defaultValue: 'unknown'
     },
     createdAt: {
       type: DataTypes.DATE,
