@@ -45,7 +45,7 @@ export async function resendEmail(req: Request, res: Response, next: NextFunctio
       'Buyer details sent to buyer service.'
     );
     const updatedUser: IAuthDocument | undefined = await getAuthUserById(parseInt(userId));
-    res.status(StatusCodes.CREATED).send({ message: 'Email verification sent', user: updatedUser });
+    res.status(StatusCodes.OK).json({ message: 'Email verification sent', user: updatedUser });
   } catch (error) {
     next(error);
   }
