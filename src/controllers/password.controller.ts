@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-import { emailSchema, passwordSchema } from '@auth/schemes/password';
+import { changePasswordSchema, emailSchema, passwordSchema } from '@auth/schemes/password';
 import { getAuthUserByPasswordToken, getAuthUserByUsernameOrEmail, updatePassword, updatePasswordToken } from '@auth/services/auth.service';
 import { BadRequestError, IAuthDocument, IEmailMessageDetails } from '@quysterben/jobber-shared';
 import { NextFunction, Request, Response } from 'express';
@@ -14,12 +14,12 @@ export async function createForgotPassword(req: Request, res: Response, next: Ne
   try {
     const { error } = await Promise.resolve(emailSchema.validate(req.body));
     if (error?.details) {
-      throw new BadRequestError(error.details[0].message, 'Password create() method error');
+      throw new BadRequestError(error.details[0].message, 'Password createForgotPassword() method error');
     }
     const { email } = req.body;
     const existingUser: IAuthDocument | undefined = await getAuthUserByUsernameOrEmail(email);
     if (!existingUser) {
-      throw new BadRequestError('User not found.', 'Password create() method error');
+      throw new BadRequestError('User not found.', 'Password createForgotPassword() method error');
     }
     const randomBytes: Buffer = await Promise.resolve(crypto.randomBytes(20));
     const randomCharacters: string = randomBytes.toString('hex');
@@ -50,17 +50,17 @@ export async function resetPassword(req: Request, res: Response, next: NextFunct
   try {
     const { error } = await Promise.resolve(passwordSchema.validate(req.body));
     if (error?.details) {
-      throw new BadRequestError(error.details[0].message, 'Password create() method error');
+      throw new BadRequestError(error.details[0].message, 'Password resetPassword() method error');
     }
 
     const { password, confirmPassword } = req.body;
     const { token } = req.params;
     if (password !== confirmPassword) {
-      throw new BadRequestError('Passwords do not match.', 'Password create() method error');
+      throw new BadRequestError('Passwords do not match.', 'Password resetPassword() method error');
     }
     const existingUser: IAuthDocument | undefined = await getAuthUserByPasswordToken(token);
     if (!existingUser) {
-      throw new BadRequestError('Invalid token.', 'Password create() method error');
+      throw new BadRequestError('Invalid token.', 'Password resetPassword() method error');
     }
 
     const hashedPassword: string = await AuthModel.prototype.hashPassword(password);
@@ -78,6 +78,42 @@ export async function resetPassword(req: Request, res: Response, next: NextFunct
       'Reset password success message sent to Notification Service'
     );
     res.status(StatusCodes.OK).json({ message: 'Reset password successfully.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { error } = await Promise.resolve(changePasswordSchema.validate(req.body));
+    if (error?.details) {
+      throw new BadRequestError(error.details[0].message, 'Password changePassword() method error');
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    if (currentPassword !== newPassword) {
+      throw new BadRequestError('Invalid password.', 'Password changePassword() method error');
+    }
+    const existingUser: IAuthDocument | undefined = await getAuthUserByUsernameOrEmail(`${req.currentUser?.username}`);
+    if (!existingUser) {
+      throw new BadRequestError('Invalid token.', 'Password changePassword() method error');
+    }
+
+    const hashedPassword: string = await AuthModel.prototype.hashPassword(newPassword);
+    await updatePassword(existingUser.id!, hashedPassword);
+
+    const messageDetails: IEmailMessageDetails = {
+      username: existingUser.username,
+      template: 'resetPasswordSuccess'
+    };
+    await publishDirectMessage(
+      authChannel,
+      'email-notification',
+      'auth-email',
+      JSON.stringify(messageDetails),
+      'Change password success message sent to Notification Service'
+    );
+    res.status(StatusCodes.OK).json({ message: 'Changed password successfully.' });
   } catch (error) {
     next(error);
   }
