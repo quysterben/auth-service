@@ -52,10 +52,10 @@ export async function create(req: Request, res: Response, next: NextFunction): P
     };
     await publishDirectMessage(
       authChannel,
-      'buyer-update',
-      'user-buyer',
+      'email-notification',
+      'auth-email',
       JSON.stringify(messageDetails),
-      'Buyer details sent to buyer service.'
+      'Verify email message has been sent to notification service.'
     );
   
     // sign jwt token and send response
