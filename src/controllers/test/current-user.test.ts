@@ -4,6 +4,7 @@ import { readCurrentUser, resendEmail } from '@auth/controllers/current-user.con
 import * as auth from '@auth/services/auth.service';
 import * as helpers from '@quysterben/jobber-shared';
 import { Sequelize } from 'sequelize';
+import { StatusCodes } from 'http-status-codes';
 
 jest.mock('@quysterben/jobber-shared');
 jest.mock('@auth/services/auth.service');
@@ -38,7 +39,7 @@ describe('CurrentUser', () => {
       const res: Response = authMockResponse();
       jest.spyOn(auth, 'getAuthUserById').mockResolvedValue(authMock);
       await readCurrentUser(req, res, () => {});
-      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
       expect(res.json).toHaveBeenCalledWith({
         message: 'Authenticated user.',
         user: authMock
@@ -49,7 +50,7 @@ describe('CurrentUser', () => {
       const res: Response = authMockResponse();
       jest.spyOn(auth, 'getAuthUserById').mockResolvedValue({} as never);
       await readCurrentUser(req, res, () => {});
-      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
       expect(res.json).toHaveBeenCalledWith({
         message: 'Authenticated user.',
         user: null
@@ -80,7 +81,7 @@ describe('CurrentUser', () => {
       jest.spyOn(auth, 'getAuthUserById').mockResolvedValue(authMock);
       await resendEmail(req, res, () => {});
       expect(auth.updateVerifyEmailField).toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.status).toHaveBeenCalledWith(StatusCodes.OK);
       expect(res.json).toHaveBeenCalledWith({
         message: 'Email verification sent',
         user: authMock
